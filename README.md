@@ -35,14 +35,14 @@ A Model Context Protocol (MCP) server implementation for Selenium WebDriver, ena
 Copy and paste the link below into a browser address bar to add this extension to goose desktop:
 
 ```
-goose://extension?cmd=npx&arg=-y&arg=%40prt%2Fmcp-selenium&id=selenium-mcp&name=Selenium%20MCP&description=automates%20browser%20interactions
+goose://extension?cmd=npx&arg=-y&arg=%40mrgolfprat%2Fmcp-selenium&id=selenium-mcp&name=Selenium%20MCP&description=automates%20browser%20interactions
 ```
 
 ### Option 2: Add manually to desktop or CLI
 
 - Name: `Selenium MCP`
 - Description: `automates browser interactions`
-- Command: `npx -y @prt/mcp-selenium`
+- Command: `npx -y @mrgolfprat/mcp-selenium`
 
 ## Use with other MCP clients (e.g. Claude Desktop, etc)
 
@@ -51,7 +51,7 @@ goose://extension?cmd=npx&arg=-y&arg=%40prt%2Fmcp-selenium&id=selenium-mcp&name=
   "mcpServers": {
     "selenium": {
       "command": "npx",
-      "args": ["-y", "@prt/mcp-selenium"]
+      "args": ["-y", "@mrgolfprat/mcp-selenium"]
     }
   }
 }
@@ -100,16 +100,16 @@ Alternatively, if you have the package linked globally (using `npm link`), you c
 
 #### Installing via Smithery
 
-To install MCP Selenium for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@prt/mcp-selenium):
+To install MCP Selenium for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@mrgolfprat/mcp-selenium):
 
 ```bash
-npx -y @smithery/cli install @prt/mcp-selenium --client claude
+npx -y @smithery/cli install @mrgolfprat/mcp-selenium --client claude
 ```
 
 #### Manual Installation
 
 ```bash
-npm install -g @prt/mcp-selenium
+npm install -g @mrgolfprat/mcp-selenium
 ```
 
 ### Usage
@@ -127,7 +127,7 @@ Or use with NPX in your MCP configuration:
   "mcpServers": {
     "selenium": {
       "command": "npx",
-      "args": ["-y", "@prt/mcp-selenium"]
+      "args": ["-y", "@mrgolfprat/mcp-selenium"]
     }
   }
 }
