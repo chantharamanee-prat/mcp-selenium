@@ -181,21 +181,86 @@ server.tool(
 );
 
 server.tool(
-  "refresh_browser",
-  "refreshes the current browser page",
+  "get_current_url",
+  "gets the current URL of the browser",
   {},
   async () => {
     try {
       const driver = getDriver();
-      await driver.navigate().refresh();
+      const currentUrl = await driver.getCurrentUrl();
       return {
-        content: [{ type: "text", text: "Page refreshed" }],
+        content: [{ type: "text", text: currentUrl }],
+      };
+    } catch (e) {
+      return {
+        content: [
+          { type: "text", text: `Error getting current URL: ${e.message}` },
+        ],
+      };
+    }
+  }
+);
+
+server.tool(
+  "refresh_browser",
+  "refreshes the current browser page and waits for content to load",
+  {
+    waitTime: z
+      .number()
+      .optional()
+      .describe(
+        "Time in milliseconds to wait after refresh for content to load (default: 15000)"
+      ),
+  },
+  async ({ waitTime = 15000 }) => {
+    try {
+      const driver = getDriver();
+      await driver.navigate().refresh();
+      if (waitTime > 0) {
+        await driver.sleep(waitTime);
+      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Page refreshed and waited ${waitTime}ms for content to load`,
+          },
+        ],
       };
     } catch (e) {
       return {
         content: [
           { type: "text", text: `Error refreshing page: ${e.message}` },
         ],
+      };
+    }
+  }
+);
+
+server.tool(
+  "sleep",
+  "pauses execution for a specified amount of time (useful when waiting for network requests)",
+  {
+    ms: z
+      .number()
+      .optional()
+      .describe("Time in milliseconds to pause the execution (default: 5000)"),
+  },
+  async ({ ms = 5000 }) => {
+    try {
+      const driver = getDriver();
+      if (ms > 0) await driver.sleep(ms);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Slept for ${ms}ms`,
+          },
+        ],
+      };
+    } catch (e) {
+      return {
+        content: [{ type: "text", text: `Error sleeping: ${e.message}` }],
       };
     }
   }
@@ -542,185 +607,6 @@ server.tool(
       return {
         content: [
           { type: "text", text: `Error getting page source: ${e.message}` },
-        ],
-      };
-    }
-  }
-);
-
-server.tool(
-  "get_clickable_elements",
-  "finds all clickable elements on the page and returns their details",
-  {
-    delay: z
-      .number()
-      .optional()
-      .describe(
-        "Optional delay in milliseconds to wait before fetching (useful for SPAs and dynamic content)"
-      ),
-  },
-  async ({ delay = 0 }) => {
-    try {
-      const driver = getDriver();
-      if (delay > 0) {
-        await driver.sleep(delay);
-      }
-
-      // Execute script to find all clickable elements
-      const clickableElements = await driver.executeScript(`
-        const elements = [];
-        const clickableSelectors = [
-          'a[href]',
-          'button',
-          'input[type="button"]',
-          'input[type="submit"]',
-          'input[type="reset"]',
-          '[onclick]',
-          '[role="button"]',
-          '[role="link"]',
-          '[tabindex]:not([tabindex="-1"])'
-        ];
-        
-        const found = document.querySelectorAll(clickableSelectors.join(', '));
-        
-        found.forEach((el, index) => {
-          const rect = el.getBoundingClientRect();
-          const isVisible = rect.width > 0 && rect.height > 0 && 
-                           window.getComputedStyle(el).visibility !== 'hidden' &&
-                           window.getComputedStyle(el).display !== 'none';
-          
-          if (isVisible) {
-            elements.push({
-              index: index,
-              tag: el.tagName.toLowerCase(),
-              type: el.type || null,
-              id: el.id || null,
-              class: el.className || null,
-              text: el.innerText?.trim().substring(0, 50) || null,
-              href: el.href || null,
-              role: el.getAttribute('role') || null,
-              ariaLabel: el.getAttribute('aria-label') || null
-            });
-          }
-        });
-        
-        return elements;
-      `);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Found ${
-              clickableElements.length
-            } clickable elements:\n\n${JSON.stringify(
-              clickableElements,
-              null,
-              2
-            )}`,
-          },
-        ],
-      };
-    } catch (e) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error getting clickable elements: ${e.message}`,
-          },
-        ],
-      };
-    }
-  }
-);
-
-server.tool(
-  "get_form_elements",
-  "finds all form elements on the page and returns their details",
-  {
-    delay: z
-      .number()
-      .optional()
-      .describe(
-        "Optional delay in milliseconds to wait before fetching (useful for SPAs and dynamic content)"
-      ),
-  },
-  async ({ delay = 0 }) => {
-    try {
-      const driver = getDriver();
-      if (delay > 0) {
-        await driver.sleep(delay);
-      }
-
-      // Execute script to find all form elements
-      const formElements = await driver.executeScript(`
-        const elements = [];
-        const formSelectors = [
-          'input',
-          'textarea',
-          'select',
-          'button[type="submit"]',
-          'form'
-        ];
-        
-        const found = document.querySelectorAll(formSelectors.join(', '));
-        
-        found.forEach((el, index) => {
-          const rect = el.getBoundingClientRect();
-          const isVisible = rect.width > 0 && rect.height > 0 && 
-                           window.getComputedStyle(el).visibility !== 'hidden' &&
-                           window.getComputedStyle(el).display !== 'none';
-          
-          if (isVisible) {
-            const elementInfo = {
-              index: index,
-              tag: el.tagName.toLowerCase(),
-              type: el.type || null,
-              id: el.id || null,
-              name: el.name || null,
-              class: el.className || null,
-              placeholder: el.placeholder || null,
-              value: el.value || null,
-              required: el.required || false,
-              disabled: el.disabled || false,
-              ariaLabel: el.getAttribute('aria-label') || null
-            };
-            
-            // Add select-specific info
-            if (el.tagName.toLowerCase() === 'select') {
-              elementInfo.options = Array.from(el.options).map(opt => ({
-                text: opt.text,
-                value: opt.value
-              }));
-            }
-            
-            // Add form-specific info
-            if (el.tagName.toLowerCase() === 'form') {
-              elementInfo.action = el.action || null;
-              elementInfo.method = el.method || null;
-            }
-            
-            elements.push(elementInfo);
-          }
-        });
-        
-        return elements;
-      `);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Found ${
-              formElements.length
-            } form elements:\n\n${JSON.stringify(formElements, null, 2)}`,
-          },
-        ],
-      };
-    } catch (e) {
-      return {
-        content: [
-          { type: "text", text: `Error getting form elements: ${e.message}` },
         ],
       };
     }
