@@ -17,6 +17,8 @@ A Model Context Protocol (MCP) server implementation for Selenium WebDriver, ena
 - Perform mouse actions (hover, drag and drop)
 - Handle keyboard input
 - Take screenshots
+- Fetch complete page HTML source for element analysis
+- Support for SPAs and dynamic content loading with configurable delays
 - Upload files
 - Support for headless mode
 
@@ -182,6 +184,22 @@ Navigates to a URL.
   "parameters": {
     "url": "https://www.example.com"
   }
+}
+```
+
+### refresh_browser
+
+Refreshes the current browser page.
+
+**Parameters:**
+None required
+
+**Example:**
+
+```json
+{
+  "tool": "refresh_browser",
+  "parameters": {}
 }
 ```
 
@@ -481,6 +499,88 @@ Captures a screenshot of the current page.
   }
 }
 ```
+
+### get_page_source
+
+Fetches the body HTML of the current page with script tags removed. This is useful for analyzing web elements, finding selectors, and understanding page structure without script clutter. Supports optional delay for single page applications (SPAs) and dynamic content.
+
+**Parameters:**
+
+- `delay` (optional): Delay in milliseconds to wait before fetching the page source. Useful for SPAs and pages with dynamic content that loads after initial page load.
+  - Type: number
+  - Default: 0
+
+**Example:**
+
+```json
+{
+  "tool": "get_page_source",
+  "parameters": {
+    "delay": 20000
+  }
+}
+```
+
+**Use cases:**
+
+- Analyze the DOM structure to find appropriate CSS selectors or XPath queries
+- Debug element location issues by examining the actual HTML
+- Wait for dynamic content to load in SPAs before extracting HTML
+- Get clean HTML without JavaScript code for better readability
+
+### get_clickable_elements
+
+Finds all clickable elements on the page and returns their details including tag, type, id, class, text, href, role, and aria-label.
+
+**Parameters:**
+
+- `delay` (optional): Delay in milliseconds to wait before fetching clickable elements. Useful for SPAs and pages with dynamic content that loads after initial page load.
+  - Type: number
+  - Default: 0
+
+**Example:**
+
+```json
+{
+  "tool": "get_clickable_elements",
+  "parameters": {
+    "delay": 2000
+  }
+}
+```
+
+**Use cases:**
+
+- Discover all interactive elements on a page for automation
+- Identify buttons, links, and other clickable elements with their properties
+- Filter visible clickable elements for testing purposes
+
+### get_form_elements
+
+Finds all form elements on the page and returns their details including tag, type, id, name, class, placeholder, value, required status, disabled status, and aria-label. For select elements, also returns available options.
+
+**Parameters:**
+
+- `delay` (optional): Delay in milliseconds to wait before fetching form elements. Useful for SPAs and pages with dynamic content that loads after initial page load.
+  - Type: number
+  - Default: 0
+
+**Example:**
+
+```json
+{
+  "tool": "get_form_elements",
+  "parameters": {
+    "delay": 2000
+  }
+}
+```
+
+**Use cases:**
+
+- Discover all form inputs, textareas, and select elements on a page
+- Identify form fields with their properties for automated form filling
+- Analyze form structure including required fields and validation attributes
 
 ### close_session
 
