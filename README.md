@@ -10,6 +10,18 @@ A Model Context Protocol (MCP) server implementation for Selenium WebDriver, ena
 
 ## Features
 
+- Start browser sessions with customizable options
+- Navigate to URLs
+- Find elements using various locator strategies
+- Click, type, and interact with elements
+- Perform mouse actions (hover, drag and drop)
+- Handle keyboard input
+- Take screenshots
+- Fetch complete page HTML source for element analysis
+- Support for SPAs and dynamic content loading with configurable delays
+- Upload files
+- Support for headless mode
+
 ## Supported Browsers
 
 - Chrome
@@ -174,6 +186,29 @@ Navigates to a URL.
   }
 }
 ```
+
+### get_current_url
+
+Gets the current URL of the browser. Useful for verifying redirects after login or navigation actions.
+
+**Parameters:**
+None required
+
+**Example:**
+
+```json
+{
+  "tool": "get_current_url",
+  "parameters": {}
+}
+```
+
+**Use cases:**
+
+- Verify successful login redirect to dashboard
+- Confirm navigation to expected page after form submission
+- Check URL changes in single page applications
+- Validate route changes during user flows
 
 ### refresh_browser
 
@@ -529,7 +564,6 @@ Fetches the body HTML of the current page with script tags removed. This is usef
 ```json
 {
   "tool": "get_page_source",
-
   "parameters": {
     "delay": 20000
   }
