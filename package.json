@@ -1,7 +1,7 @@
 {
   "name": "@prt/mcp-selenium",
-  "version": "0.1.21",
-  "description": "Selenium WebDriver MCP Server",
+  "version": "0.1.22",
+  "description": "Selenium WebDriver MCP Server Custom",
   "type": "module",
   "main": "src/lib/server.js",
   "bin": {
