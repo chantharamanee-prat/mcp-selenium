@@ -143,16 +143,29 @@ Launches a browser session.
 
 - `browser` (required): Browser to launch
   - Type: string
-  - Enum: ["chrome", "firefox"]
-- `options`: Browser configuration options
-  - Type: object
+  - Enum: ["chrome", "firefox", "edge"]
+- `options` (optional): Browser configuration options (can be omitted or null)
+  - Type: object or null
   - Properties:
     - `headless`: Run browser in headless mode
       - Type: boolean
     - `arguments`: Additional browser arguments
       - Type: array of strings
 
-**Example:**
+**Examples:**
+
+Simple usage without options:
+
+```json
+{
+  "tool": "start_browser",
+  "parameters": {
+    "browser": "chrome"
+  }
+}
+```
+
+With options:
 
 ```json
 {
@@ -163,6 +176,18 @@ Launches a browser session.
       "headless": true,
       "arguments": ["--no-sandbox"]
     }
+  }
+}
+```
+
+With null options (also valid):
+
+```json
+{
+  "tool": "start_browser",
+  "parameters": {
+    "browser": "chrome",
+    "options": null
   }
 }
 ```

@@ -61,7 +61,9 @@ const browserOptionsSchema = z
       .optional()
       .describe("Additional browser arguments"),
   })
-  .optional();
+  .optional()
+  .nullable()
+  .default({});
 
 const locatorSchema = {
   by: z
