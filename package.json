@@ -1,5 +1,5 @@
 {
-  "name": "@angiejones/mcp-selenium",
+  "name": "@prt/mcp-selenium",
   "version": "0.1.21",
   "description": "Selenium WebDriver MCP Server",
   "type": "module",

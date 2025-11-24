@@ -8,7 +8,6 @@ A Model Context Protocol (MCP) server implementation for Selenium WebDriver, ena
 
 [![Watch the video](https://img.youtube.com/vi/mRV0N8hcgYA/sddefault.jpg)](https://youtu.be/mRV0N8hcgYA)
 
-
 ## Features
 
 - Start browser sessions with customizable options
@@ -30,26 +29,27 @@ A Model Context Protocol (MCP) server implementation for Selenium WebDriver, ena
 ## Use with Goose
 
 ### Option 1: One-click install
+
 Copy and paste the link below into a browser address bar to add this extension to goose desktop:
 
 ```
-goose://extension?cmd=npx&arg=-y&arg=%40angiejones%2Fmcp-selenium&id=selenium-mcp&name=Selenium%20MCP&description=automates%20browser%20interactions
+goose://extension?cmd=npx&arg=-y&arg=%40prt%2Fmcp-selenium&id=selenium-mcp&name=Selenium%20MCP&description=automates%20browser%20interactions
 ```
-
 
 ### Option 2: Add manually to desktop or CLI
 
-* Name: `Selenium MCP`
-* Description: `automates browser interactions`
-* Command: `npx -y @angiejones/mcp-selenium`
+- Name: `Selenium MCP`
+- Description: `automates browser interactions`
+- Command: `npx -y @prt/mcp-selenium`
 
 ## Use with other MCP clients (e.g. Claude Desktop, etc)
+
 ```json
 {
   "mcpServers": {
     "selenium": {
       "command": "npx",
-      "args": ["-y", "@angiejones/mcp-selenium"]
+      "args": ["-y", "@prt/mcp-selenium"]
     }
   }
 }
@@ -65,21 +65,50 @@ To work on this project:
 2. Install dependencies: `npm install`
 3. Run the server: `npm start`
 
+### Local Development MCP Configuration
+
+For local development and testing, you can configure your MCP client to use the local version of the server:
+
+```json
+{
+  "mcpServers": {
+    "selenium": {
+      "command": "node",
+      "args": ["path-to-your-mcp-selenium/bin/mcp-selenium.js"]
+    }
+  }
+}
+```
+
+**Note:** Replace the path in `args` with the absolute path to your local `bin/mcp-selenium.js` file.
+
+Alternatively, if you have the package linked globally (using `npm link`), you can use:
+
+```json
+{
+  "mcpServers": {
+    "selenium": {
+      "command": "mcp-selenium"
+    }
+  }
+}
+```
+
 ### Installation
 
 #### Installing via Smithery
 
-To install MCP Selenium for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@angiejones/mcp-selenium):
+To install MCP Selenium for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@prt/mcp-selenium):
 
 ```bash
-npx -y @smithery/cli install @angiejones/mcp-selenium --client claude
+npx -y @smithery/cli install @prt/mcp-selenium --client claude
 ```
 
 #### Manual Installation
-```bash
-npm install -g @angiejones/mcp-selenium
-```
 
+```bash
+npm install -g @prt/mcp-selenium
+```
 
 ### Usage
 
@@ -96,23 +125,20 @@ Or use with NPX in your MCP configuration:
   "mcpServers": {
     "selenium": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@angiejones/mcp-selenium"
-      ]
+      "args": ["-y", "@prt/mcp-selenium"]
     }
   }
 }
 ```
 
-
-
 ## Tools
 
 ### start_browser
+
 Launches a browser session.
 
 **Parameters:**
+
 - `browser` (required): Browser to launch
   - Type: string
   - Enum: ["chrome", "firefox"]
@@ -125,6 +151,7 @@ Launches a browser session.
       - Type: array of strings
 
 **Example:**
+
 ```json
 {
   "tool": "start_browser",
@@ -139,13 +166,16 @@ Launches a browser session.
 ```
 
 ### navigate
+
 Navigates to a URL.
 
 **Parameters:**
+
 - `url` (required): URL to navigate to
   - Type: string
 
 **Example:**
+
 ```json
 {
   "tool": "navigate",
@@ -156,9 +186,11 @@ Navigates to a URL.
 ```
 
 ### find_element
+
 Finds an element on the page.
 
 **Parameters:**
+
 - `by` (required): Locator strategy
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -169,6 +201,7 @@ Finds an element on the page.
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "find_element",
@@ -181,9 +214,11 @@ Finds an element on the page.
 ```
 
 ### click_element
+
 Clicks an element.
 
 **Parameters:**
+
 - `by` (required): Locator strategy
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -194,6 +229,7 @@ Clicks an element.
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "click_element",
@@ -205,9 +241,11 @@ Clicks an element.
 ```
 
 ### send_keys
+
 Sends keys to an element (typing).
 
 **Parameters:**
+
 - `by` (required): Locator strategy
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -220,6 +258,7 @@ Sends keys to an element (typing).
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "send_keys",
@@ -232,9 +271,11 @@ Sends keys to an element (typing).
 ```
 
 ### get_element_text
+
 Gets the text() of an element.
 
 **Parameters:**
+
 - `by` (required): Locator strategy
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -245,6 +286,7 @@ Gets the text() of an element.
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "get_element_text",
@@ -256,9 +298,11 @@ Gets the text() of an element.
 ```
 
 ### hover
+
 Moves the mouse to hover over an element.
 
 **Parameters:**
+
 - `by` (required): Locator strategy
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -269,6 +313,7 @@ Moves the mouse to hover over an element.
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "hover",
@@ -280,9 +325,11 @@ Moves the mouse to hover over an element.
 ```
 
 ### drag_and_drop
+
 Drags an element and drops it onto another element.
 
 **Parameters:**
+
 - `by` (required): Locator strategy for source element
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -298,6 +345,7 @@ Drags an element and drops it onto another element.
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "drag_and_drop",
@@ -311,9 +359,11 @@ Drags an element and drops it onto another element.
 ```
 
 ### double_click
+
 Performs a double click on an element.
 
 **Parameters:**
+
 - `by` (required): Locator strategy
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -324,6 +374,7 @@ Performs a double click on an element.
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "double_click",
@@ -335,9 +386,11 @@ Performs a double click on an element.
 ```
 
 ### right_click
+
 Performs a right click (context click) on an element.
 
 **Parameters:**
+
 - `by` (required): Locator strategy
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -348,6 +401,7 @@ Performs a right click (context click) on an element.
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "right_click",
@@ -359,13 +413,16 @@ Performs a right click (context click) on an element.
 ```
 
 ### press_key
+
 Simulates pressing a keyboard key.
 
 **Parameters:**
+
 - `key` (required): Key to press (e.g., 'Enter', 'Tab', 'a', etc.)
   - Type: string
 
 **Example:**
+
 ```json
 {
   "tool": "press_key",
@@ -376,9 +433,11 @@ Simulates pressing a keyboard key.
 ```
 
 ### upload_file
+
 Uploads a file using a file input element.
 
 **Parameters:**
+
 - `by` (required): Locator strategy
   - Type: string
   - Enum: ["id", "css", "xpath", "name", "tag", "class"]
@@ -391,6 +450,7 @@ Uploads a file using a file input element.
   - Default: 10000
 
 **Example:**
+
 ```json
 {
   "tool": "upload_file",
@@ -403,13 +463,16 @@ Uploads a file using a file input element.
 ```
 
 ### take_screenshot
+
 Captures a screenshot of the current page.
 
 **Parameters:**
+
 - `outputPath` (optional): Path where to save the screenshot. If not provided, returns base64 data.
   - Type: string
 
 **Example:**
+
 ```json
 {
   "tool": "take_screenshot",
@@ -420,19 +483,20 @@ Captures a screenshot of the current page.
 ```
 
 ### close_session
+
 Closes the current browser session and cleans up resources.
 
 **Parameters:**
 None required
 
 **Example:**
+
 ```json
 {
   "tool": "close_session",
   "parameters": {}
 }
 ```
-
 
 ## License
 
