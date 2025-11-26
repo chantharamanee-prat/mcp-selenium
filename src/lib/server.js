@@ -11,7 +11,7 @@ import { chromium, firefox, webkit } from "playwright";
 // Create an MCP server
 const server = new McpServer({
   name: "MCP Playwright",
-  version: "1.0.1",
+  version: "0.1.1",
 });
 
 // Server state
@@ -199,27 +199,17 @@ server.tool(
 
 server.tool(
   "refresh_browser",
-  "refreshes the current browser page and waits for content to load",
-  {
-    waitTime: z
-      .number()
-      .optional()
-      .describe(
-        "Time in milliseconds to wait after refresh for content to load (default: 15000)"
-      ),
-  },
-  async ({ waitTime = 15000 }) => {
+  "refreshes the current browser page",
+  {},
+  async () => {
     try {
       const page = getPage();
       await page.reload();
-      if (waitTime > 0) {
-        await page.waitForTimeout(waitTime);
-      }
       return {
         content: [
           {
             type: "text",
-            text: `Page refreshed and waited ${waitTime}ms for content to load`,
+            text: "Page refreshed",
           },
         ],
       };
@@ -548,20 +538,10 @@ server.tool(
 server.tool(
   "get_page_source",
   "fetches the body HTML of the current page with scripts removed, useful for analyzing web elements and finding selectors",
-  {
-    delay: z
-      .number()
-      .optional()
-      .describe(
-        "Optional delay in milliseconds to wait before fetching (useful for SPAs and dynamic content)"
-      ),
-  },
-  async ({ delay = 0 }) => {
+  {},
+  async () => {
     try {
       const page = getPage();
-      if (delay > 0) {
-        await page.waitForTimeout(delay);
-      }
 
       // Execute script to get body HTML without script tags
       const bodySource = await page.evaluate(() => {

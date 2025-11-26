@@ -12,7 +12,6 @@ A Model Context Protocol (MCP) server implementation for Playwright, enabling br
 - Handle keyboard input
 - Take screenshots (full page or viewport)
 - Fetch complete page HTML source for element analysis
-- Support for SPAs and dynamic content loading with configurable delays
 - Upload files
 - Execute custom JavaScript in page context
 - Support for headless mode
@@ -295,22 +294,17 @@ None required
 
 ### refresh_browser
 
-Refreshes the current browser page and waits for content to load.
+Refreshes the current browser page. Use the `sleep` tool after this if you need to wait for content to load.
 
 **Parameters:**
-
-- `waitTime` (optional): Time in milliseconds to wait after refresh for content to load
-  - Type: number
-  - Default: 15000 (15 seconds)
+None required
 
 **Example:**
 
 ```json
 {
   "tool": "refresh_browser",
-  "parameters": {
-    "waitTime": 20000
-  }
+  "parameters": {}
 }
 ```
 
@@ -598,22 +592,17 @@ Captures a screenshot of the current page.
 
 ### get_page_source
 
-Fetches the body HTML of the current page with script tags removed. This is useful for analyzing web elements, finding selectors, and understanding page structure without script clutter. Supports optional delay for single page applications (SPAs) and dynamic content.
+Fetches the body HTML of the current page with script tags removed. This is useful for analyzing web elements, finding selectors, and understanding page structure without script clutter. For SPAs and dynamic content that loads asynchronously, use the `sleep` tool before calling this.
 
 **Parameters:**
-
-- `delay` (optional): Delay in milliseconds to wait before fetching the page source. Useful for SPAs and pages with dynamic content that loads after initial page load.
-  - Type: number
-  - Default: 0
+None required
 
 **Example:**
 
 ```json
 {
   "tool": "get_page_source",
-  "parameters": {
-    "delay": 20000
-  }
+  "parameters": {}
 }
 ```
 
@@ -621,8 +610,8 @@ Fetches the body HTML of the current page with script tags removed. This is usef
 
 - Analyze the DOM structure to find appropriate CSS selectors or XPath queries
 - Debug element location issues by examining the actual HTML
-- Wait for dynamic content to load in SPAs before extracting HTML
 - Get clean HTML without JavaScript code for better readability
+- For dynamic content in SPAs, use `sleep` tool first, then call this tool
 
 ### close_session
 

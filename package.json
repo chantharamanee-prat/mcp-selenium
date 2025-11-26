@@ -1,6 +1,6 @@
 {
   "name": "@mrgolfprat/mcp-playwright",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Model Context Protocol (MCP) server powered by Playwright",
   "type": "module",
   "main": "src/lib/server.js",
