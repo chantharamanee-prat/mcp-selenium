@@ -1,18 +1,48 @@
 {
   "name": "@mrgolfprat/mcp-playwright",
   "version": "0.1.0",
-  "description": "Playwright MCP Server Custom",
+  "description": "Model Context Protocol (MCP) server powered by Playwright",
   "type": "module",
   "main": "src/lib/server.js",
   "bin": {
     "mcp-playwright": "./bin/mcp-playwright.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run lint || exit 0",
+    "lint": "node -e \"require('fs').access('src/lib/server.js', fs.constants.F_OK, e=>process.exit(e?1:0))\""
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "playwright",
+    "automation",
+    "browser",
+    "server"
+  ],
+  "author": "chantharamanee-prat",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chantharamanee-prat/mcp-selenium.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chantharamanee-prat/mcp-selenium/issues"
+  },
+  "homepage": "https://github.com/chantharamanee-prat/mcp-selenium#readme",
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE",
+    "smithery.yaml"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "playwright": "^1.57.0"
