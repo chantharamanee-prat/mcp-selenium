@@ -6,70 +6,66 @@ import {
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import pkg from "selenium-webdriver";
-const { Builder, By, Key, until, Actions } = pkg;
-import { Options as ChromeOptions } from "selenium-webdriver/chrome.js";
-import { Options as FirefoxOptions } from "selenium-webdriver/firefox.js";
-import { Options as EdgeOptions } from "selenium-webdriver/edge.js";
+import { chromium, firefox, webkit } from "playwright";
 
 // Create an MCP server
 const server = new McpServer({
-  name: "MCP Selenium",
-  version: "1.0.0",
+  name: "MCP Playwright",
+  version: "1.0.1",
 });
 
 // Server state
 const state = {
-  drivers: new Map(),
+  browsers: new Map(),
+  contexts: new Map(),
+  pages: new Map(),
   currentSession: null,
 };
 
 // Helper functions
-const getDriver = () => {
-  const driver = state.drivers.get(state.currentSession);
-  if (!driver) {
+const getPage = () => {
+  const page = state.pages.get(state.currentSession);
+  if (!page) {
     throw new Error("No active browser session");
   }
-  return driver;
-};
-
-const getLocator = (by, value) => {
-  switch (by.toLowerCase()) {
-    case "id":
-      return By.id(value);
-    case "css":
-      return By.css(value);
-    case "xpath":
-      return By.xpath(value);
-    case "name":
-      return By.name(value);
-    case "tag":
-      return By.css(value);
-    case "class":
-      return By.className(value);
-    default:
-      throw new Error(`Unsupported locator strategy: ${by}`);
-  }
+  return page;
 };
 
 // Common schemas
 const browserOptionsSchema = z
   .object({
     headless: z.boolean().optional().describe("Run browser in headless mode"),
-    arguments: z
-      .array(z.string())
+    viewport: z
+      .object({
+        width: z.number().optional().describe("Viewport width in pixels"),
+        height: z.number().optional().describe("Viewport height in pixels"),
+      })
       .optional()
-      .describe("Additional browser arguments"),
+      .describe("Viewport size"),
+    userAgent: z.string().optional().describe("Custom user agent string"),
+    userDataDir: z
+      .string()
+      .optional()
+      .describe(
+        "Path to user data directory for persistent browser profile (cache, cookies, etc.)"
+      ),
+    channel: z
+      .string()
+      .optional()
+      .describe(
+        "Browser channel to use (e.g., 'chrome', 'msedge') for using system-installed browsers with their profiles"
+      ),
   })
   .optional()
   .nullable()
   .default({});
 
 const locatorSchema = {
-  by: z
-    .enum(["id", "css", "xpath", "name", "tag", "class"])
-    .describe("Locator strategy to find element"),
-  value: z.string().describe("Value for the locator strategy"),
+  selector: z
+    .string()
+    .describe(
+      "CSS selector, text selector, or other Playwright-compatible selector"
+    ),
   timeout: z
     .number()
     .optional()
@@ -82,65 +78,59 @@ server.tool(
   "launches browser",
   {
     browser: z
-      .enum(["chrome", "firefox", "edge"])
-      .describe("Browser to launch (chrome or firefox or microsoft edge)"),
+      .enum(["chromium", "firefox", "webkit"])
+      .describe("Browser to launch (chromium, firefox, or webkit/Safari)"),
     options: browserOptionsSchema,
   },
   async ({ browser, options = {} }) => {
     try {
-      let builder = new Builder();
-      let driver;
-      switch (browser) {
-        case "chrome": {
-          const chromeOptions = new ChromeOptions();
-          if (options.headless) {
-            chromeOptions.addArguments("--headless=new");
-          }
-          if (options.arguments) {
-            options.arguments.forEach((arg) => chromeOptions.addArguments(arg));
-          }
-          driver = await builder
-            .forBrowser("chrome")
-            .setChromeOptions(chromeOptions)
-            .build();
-          break;
-        }
-        case "edge": {
-          const edgeOptions = new EdgeOptions();
-          if (options.headless) {
-            edgeOptions.addArguments("--headless=new");
-          }
-          if (options.arguments) {
-            options.arguments.forEach((arg) => edgeOptions.addArguments(arg));
-          }
-          driver = await builder
-            .forBrowser("edge")
-            .setEdgeOptions(edgeOptions)
-            .build();
-          break;
-        }
-        case "firefox": {
-          const firefoxOptions = new FirefoxOptions();
-          if (options.headless) {
-            firefoxOptions.addArguments("--headless");
-          }
-          if (options.arguments) {
-            options.arguments.forEach((arg) =>
-              firefoxOptions.addArguments(arg)
-            );
-          }
-          driver = await builder
-            .forBrowser("firefox")
-            .setFirefoxOptions(firefoxOptions)
-            .build();
-          break;
-        }
-        default: {
-          throw new Error(`Unsupported browser: ${browser}`);
-        }
+      let browserInstance;
+      const launchOptions = {
+        headless: options?.headless ?? false,
+      };
+
+      // Add user data directory if provided
+      if (options?.userDataDir) {
+        launchOptions.args = [
+          `--user-data-dir=${options.userDataDir}`,
+          ...(launchOptions.args || []),
+        ];
       }
+
+      // Add channel for using system-installed browsers
+      if (options?.channel) {
+        launchOptions.channel = options.channel;
+      }
+
+      switch (browser) {
+        case "chromium":
+          browserInstance = await chromium.launch(launchOptions);
+          break;
+        case "firefox":
+          browserInstance = await firefox.launch(launchOptions);
+          break;
+        case "webkit":
+          browserInstance = await webkit.launch(launchOptions);
+          break;
+        default:
+          throw new Error(`Unsupported browser: ${browser}`);
+      }
+
+      const contextOptions = {};
+      if (options?.viewport) {
+        contextOptions.viewport = options.viewport;
+      }
+      if (options?.userAgent) {
+        contextOptions.userAgent = options.userAgent;
+      }
+
+      const context = await browserInstance.newContext(contextOptions);
+      const page = await context.newPage();
+
       const sessionId = `${browser}_${Date.now()}`;
-      state.drivers.set(sessionId, driver);
+      state.browsers.set(sessionId, browserInstance);
+      state.contexts.set(sessionId, context);
+      state.pages.set(sessionId, page);
       state.currentSession = sessionId;
 
       return {
@@ -166,11 +156,15 @@ server.tool(
   "navigates to a URL",
   {
     url: z.string().describe("URL to navigate to"),
+    waitUntil: z
+      .enum(["load", "domcontentloaded", "networkidle"])
+      .optional()
+      .describe("When to consider navigation successful"),
   },
-  async ({ url }) => {
+  async ({ url, waitUntil = "load" }) => {
     try {
-      const driver = getDriver();
-      await driver.get(url);
+      const page = getPage();
+      await page.goto(url, { waitUntil });
       return {
         content: [{ type: "text", text: `Navigated to ${url}` }],
       };
@@ -188,8 +182,8 @@ server.tool(
   {},
   async () => {
     try {
-      const driver = getDriver();
-      const currentUrl = await driver.getCurrentUrl();
+      const page = getPage();
+      const currentUrl = page.url();
       return {
         content: [{ type: "text", text: currentUrl }],
       };
@@ -216,10 +210,10 @@ server.tool(
   },
   async ({ waitTime = 15000 }) => {
     try {
-      const driver = getDriver();
-      await driver.navigate().refresh();
+      const page = getPage();
+      await page.reload();
       if (waitTime > 0) {
-        await driver.sleep(waitTime);
+        await page.waitForTimeout(waitTime);
       }
       return {
         content: [
@@ -250,8 +244,8 @@ server.tool(
   },
   async ({ ms = 5000 }) => {
     try {
-      const driver = getDriver();
-      if (ms > 0) await driver.sleep(ms);
+      const page = getPage();
+      if (ms > 0) await page.waitForTimeout(ms);
       return {
         content: [
           {
@@ -275,11 +269,10 @@ server.tool(
   {
     ...locatorSchema,
   },
-  async ({ by, value, timeout = 10000 }) => {
+  async ({ selector, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const locator = getLocator(by, value);
-      await driver.wait(until.elementLocated(locator), timeout);
+      const page = getPage();
+      await page.waitForSelector(selector, { timeout });
       return {
         content: [{ type: "text", text: "Element found" }],
       };
@@ -299,12 +292,10 @@ server.tool(
   {
     ...locatorSchema,
   },
-  async ({ by, value, timeout = 10000 }) => {
+  async ({ selector, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const locator = getLocator(by, value);
-      const element = await driver.wait(until.elementLocated(locator), timeout);
-      await element.click();
+      const page = getPage();
+      await page.click(selector, { timeout });
       return {
         content: [{ type: "text", text: "Element clicked" }],
       };
@@ -325,13 +316,10 @@ server.tool(
     ...locatorSchema,
     text: z.string().describe("Text to enter into the element"),
   },
-  async ({ by, value, text, timeout = 10000 }) => {
+  async ({ selector, text, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const locator = getLocator(by, value);
-      const element = await driver.wait(until.elementLocated(locator), timeout);
-      await element.clear();
-      await element.sendKeys(text);
+      const page = getPage();
+      await page.fill(selector, text, { timeout });
       return {
         content: [
           { type: "text", text: `Text "${text}" entered into element` },
@@ -347,18 +335,16 @@ server.tool(
 
 server.tool(
   "get_element_text",
-  "gets the text() of an element",
+  "gets the text content of an element",
   {
     ...locatorSchema,
   },
-  async ({ by, value, timeout = 10000 }) => {
+  async ({ selector, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const locator = getLocator(by, value);
-      const element = await driver.wait(until.elementLocated(locator), timeout);
-      const text = await element.getText();
+      const page = getPage();
+      const text = await page.textContent(selector, { timeout });
       return {
-        content: [{ type: "text", text }],
+        content: [{ type: "text", text: text || "" }],
       };
     } catch (e) {
       return {
@@ -376,13 +362,10 @@ server.tool(
   {
     ...locatorSchema,
   },
-  async ({ by, value, timeout = 10000 }) => {
+  async ({ selector, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const locator = getLocator(by, value);
-      const element = await driver.wait(until.elementLocated(locator), timeout);
-      const actions = driver.actions({ bridge: true });
-      await actions.move({ origin: element }).perform();
+      const page = getPage();
+      await page.hover(selector, { timeout });
       return {
         content: [{ type: "text", text: "Hovered over element" }],
       };
@@ -401,26 +384,14 @@ server.tool(
   "drags an element and drops it onto another element",
   {
     ...locatorSchema,
-    targetBy: z
-      .enum(["id", "css", "xpath", "name", "tag", "class"])
-      .describe("Locator strategy to find target element"),
-    targetValue: z.string().describe("Value for the target locator strategy"),
+    targetSelector: z
+      .string()
+      .describe("CSS selector for the target drop element"),
   },
-  async ({ by, value, targetBy, targetValue, timeout = 10000 }) => {
+  async ({ selector, targetSelector, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const sourceLocator = getLocator(by, value);
-      const targetLocator = getLocator(targetBy, targetValue);
-      const sourceElement = await driver.wait(
-        until.elementLocated(sourceLocator),
-        timeout
-      );
-      const targetElement = await driver.wait(
-        until.elementLocated(targetLocator),
-        timeout
-      );
-      const actions = driver.actions({ bridge: true });
-      await actions.dragAndDrop(sourceElement, targetElement).perform();
+      const page = getPage();
+      await page.dragAndDrop(selector, targetSelector, { timeout });
       return {
         content: [{ type: "text", text: "Drag and drop completed" }],
       };
@@ -443,13 +414,10 @@ server.tool(
   {
     ...locatorSchema,
   },
-  async ({ by, value, timeout = 10000 }) => {
+  async ({ selector, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const locator = getLocator(by, value);
-      const element = await driver.wait(until.elementLocated(locator), timeout);
-      const actions = driver.actions({ bridge: true });
-      await actions.doubleClick(element).perform();
+      const page = getPage();
+      await page.dblclick(selector, { timeout });
       return {
         content: [{ type: "text", text: "Double click performed" }],
       };
@@ -469,13 +437,10 @@ server.tool(
   {
     ...locatorSchema,
   },
-  async ({ by, value, timeout = 10000 }) => {
+  async ({ selector, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const locator = getLocator(by, value);
-      const element = await driver.wait(until.elementLocated(locator), timeout);
-      const actions = driver.actions({ bridge: true });
-      await actions.contextClick(element).perform();
+      const page = getPage();
+      await page.click(selector, { button: "right", timeout });
       return {
         content: [{ type: "text", text: "Right click performed" }],
       };
@@ -497,9 +462,8 @@ server.tool(
   },
   async ({ key }) => {
     try {
-      const driver = getDriver();
-      const actions = driver.actions({ bridge: true });
-      await actions.keyDown(key).keyUp(key).perform();
+      const page = getPage();
+      await page.keyboard.press(key);
       return {
         content: [{ type: "text", text: `Key '${key}' pressed` }],
       };
@@ -518,12 +482,10 @@ server.tool(
     ...locatorSchema,
     filePath: z.string().describe("Absolute path to the file to upload"),
   },
-  async ({ by, value, filePath, timeout = 10000 }) => {
+  async ({ selector, filePath, timeout = 10000 }) => {
     try {
-      const driver = getDriver();
-      const locator = getLocator(by, value);
-      const element = await driver.wait(until.elementLocated(locator), timeout);
-      await element.sendKeys(filePath);
+      const page = getPage();
+      await page.setInputFiles(selector, filePath, { timeout });
       return {
         content: [{ type: "text", text: "File upload initiated" }],
       };
@@ -545,14 +507,21 @@ server.tool(
       .describe(
         "Optional path where to save the screenshot. If not provided, returns base64 data."
       ),
+    fullPage: z
+      .boolean()
+      .optional()
+      .describe("Capture full scrollable page (default: false)"),
   },
-  async ({ outputPath }) => {
+  async ({ outputPath, fullPage = false }) => {
     try {
-      const driver = getDriver();
-      const screenshot = await driver.takeScreenshot();
+      const page = getPage();
+      const screenshot = await page.screenshot({
+        path: outputPath,
+        fullPage,
+        type: outputPath?.endsWith(".jpg") ? "jpeg" : "png",
+      });
+
       if (outputPath) {
-        const fs = await import("fs");
-        await fs.promises.writeFile(outputPath, screenshot, "base64");
         return {
           content: [
             { type: "text", text: `Screenshot saved to ${outputPath}` },
@@ -562,7 +531,7 @@ server.tool(
         return {
           content: [
             { type: "text", text: "Screenshot captured as base64:" },
-            { type: "text", text: screenshot },
+            { type: "text", text: screenshot.toString("base64") },
           ],
         };
       }
@@ -589,18 +558,18 @@ server.tool(
   },
   async ({ delay = 0 }) => {
     try {
-      const driver = getDriver();
+      const page = getPage();
       if (delay > 0) {
-        await driver.sleep(delay);
+        await page.waitForTimeout(delay);
       }
 
       // Execute script to get body HTML without script tags
-      const bodySource = await driver.executeScript(`
+      const bodySource = await page.evaluate(() => {
         const body = document.body.cloneNode(true);
-        const scripts = body.querySelectorAll('script');
-        scripts.forEach(script => script.remove());
+        const scripts = body.querySelectorAll("script");
+        scripts.forEach((script) => script.remove());
         return body.outerHTML;
-      `);
+      });
 
       return {
         content: [{ type: "text", text: bodySource }],
@@ -621,9 +590,13 @@ server.tool(
   {},
   async () => {
     try {
-      const driver = getDriver();
-      await driver.quit();
-      state.drivers.delete(state.currentSession);
+      const browser = state.browsers.get(state.currentSession);
+      if (browser) {
+        await browser.close();
+      }
+      state.browsers.delete(state.currentSession);
+      state.contexts.delete(state.currentSession);
+      state.pages.delete(state.currentSession);
       const sessionId = state.currentSession;
       state.currentSession = null;
       return {
@@ -659,14 +632,16 @@ server.resource(
 
 // Cleanup handler
 async function cleanup() {
-  for (const [sessionId, driver] of state.drivers) {
+  for (const [sessionId, browser] of state.browsers) {
     try {
-      await driver.quit();
+      await browser.close();
     } catch (e) {
       console.error(`Error closing browser session ${sessionId}:`, e);
     }
   }
-  state.drivers.clear();
+  state.browsers.clear();
+  state.contexts.clear();
+  state.pages.clear();
   state.currentSession = null;
   process.exit(0);
 }

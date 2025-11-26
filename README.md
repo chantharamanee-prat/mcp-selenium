@@ -1,32 +1,28 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/angiejones-mcp-selenium-badge.png)](https://mseep.ai/app/angiejones-mcp-selenium)
+# MCP Playwright Server
 
-# MCP Selenium Server
-
-A Model Context Protocol (MCP) server implementation for Selenium WebDriver, enabling browser automation through standardized MCP clients.
-
-## Video Demo (Click to Watch)
-
-[![Watch the video](https://img.youtube.com/vi/mRV0N8hcgYA/sddefault.jpg)](https://youtu.be/mRV0N8hcgYA)
+A Model Context Protocol (MCP) server implementation for Playwright, enabling browser automation through standardized MCP clients.
 
 ## Features
 
 - Start browser sessions with customizable options
-- Navigate to URLs
-- Find elements using various locator strategies
+- Navigate to URLs with configurable wait strategies
+- Find elements using Playwright's powerful selector engine
 - Click, type, and interact with elements
 - Perform mouse actions (hover, drag and drop)
 - Handle keyboard input
-- Take screenshots
+- Take screenshots (full page or viewport)
 - Fetch complete page HTML source for element analysis
 - Support for SPAs and dynamic content loading with configurable delays
 - Upload files
+- Execute custom JavaScript in page context
 - Support for headless mode
+- Viewport and user agent customization
 
 ## Supported Browsers
 
-- Chrome
+- Chromium (Chrome, Edge, etc.)
 - Firefox
-- MS Edge
+- WebKit (Safari)
 
 ## Use with Goose
 
@@ -35,23 +31,23 @@ A Model Context Protocol (MCP) server implementation for Selenium WebDriver, ena
 Copy and paste the link below into a browser address bar to add this extension to goose desktop:
 
 ```
-goose://extension?cmd=npx&arg=-y&arg=%40mrgolfprat%2Fmcp-selenium&id=selenium-mcp&name=Selenium%20MCP&description=automates%20browser%20interactions
+goose://extension?cmd=npx&arg=-y&arg=%40mrgolfprat%2Fmcp-playwright&id=playwright-mcp&name=Playwright%20MCP&description=automates%20browser%20interactions
 ```
 
 ### Option 2: Add manually to desktop or CLI
 
-- Name: `Selenium MCP`
+- Name: `Playwright MCP`
 - Description: `automates browser interactions`
-- Command: `npx -y @mrgolfprat/mcp-selenium`
+- Command: `npx -y @mrgolfprat/mcp-playwright`
 
 ## Use with other MCP clients (e.g. Claude Desktop, etc)
 
 ```json
 {
   "mcpServers": {
-    "selenium": {
+    "playwright": {
       "command": "npx",
-      "args": ["-y", "@mrgolfprat/mcp-selenium"]
+      "args": ["-y", "@mrgolfprat/mcp-playwright"]
     }
   }
 }
@@ -65,7 +61,8 @@ To work on this project:
 
 1. Clone the repository
 2. Install dependencies: `npm install`
-3. Run the server: `npm start`
+3. Install Playwright browsers: `npx playwright install`
+4. Run the server: `npm start`
 
 ### Local Development MCP Configuration
 
@@ -74,23 +71,23 @@ For local development and testing, you can configure your MCP client to use the 
 ```json
 {
   "mcpServers": {
-    "selenium": {
+    "playwright": {
       "command": "node",
-      "args": ["path-to-your-mcp-selenium/bin/mcp-selenium.js"]
+      "args": ["path-to-your-mcp-playwright/bin/mcp-playwright.js"]
     }
   }
 }
 ```
 
-**Note:** Replace the path in `args` with the absolute path to your local `bin/mcp-selenium.js` file.
+**Note:** Replace the path in `args` with the absolute path to your local `bin/mcp-playwright.js` file.
 
 Alternatively, if you have the package linked globally (using `npm link`), you can use:
 
 ```json
 {
   "mcpServers": {
-    "selenium": {
-      "command": "mcp-selenium"
+    "playwright": {
+      "command": "mcp-playwright"
     }
   }
 }
@@ -100,16 +97,17 @@ Alternatively, if you have the package linked globally (using `npm link`), you c
 
 #### Installing via Smithery
 
-To install MCP Selenium for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@mrgolfprat/mcp-selenium):
+To install MCP Playwright for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@mrgolfprat/mcp-playwright):
 
 ```bash
-npx -y @smithery/cli install @mrgolfprat/mcp-selenium --client claude
+npx -y @smithery/cli install @mrgolfprat/mcp-playwright --client claude
 ```
 
 #### Manual Installation
 
 ```bash
-npm install -g @mrgolfprat/mcp-selenium
+npm install -g @mrgolfprat/mcp-playwright
+npx playwright install
 ```
 
 ### Usage
@@ -117,7 +115,7 @@ npm install -g @mrgolfprat/mcp-selenium
 Start the server by running:
 
 ```bash
-mcp-selenium
+mcp-playwright
 ```
 
 Or use with NPX in your MCP configuration:
@@ -125,9 +123,9 @@ Or use with NPX in your MCP configuration:
 ```json
 {
   "mcpServers": {
-    "selenium": {
+    "playwright": {
       "command": "npx",
-      "args": ["-y", "@mrgolfprat/mcp-selenium"]
+      "args": ["-y", "@mrgolfprat/mcp-playwright"]
     }
   }
 }
@@ -143,14 +141,25 @@ Launches a browser session.
 
 - `browser` (required): Browser to launch
   - Type: string
-  - Enum: ["chrome", "firefox", "edge"]
+  - Enum: ["chromium", "firefox", "webkit"]
 - `options` (optional): Browser configuration options (can be omitted or null)
   - Type: object or null
   - Properties:
     - `headless`: Run browser in headless mode
       - Type: boolean
-    - `arguments`: Additional browser arguments
-      - Type: array of strings
+    - `viewport`: Viewport size configuration
+      - Type: object
+      - Properties:
+        - `width`: Viewport width in pixels (number)
+        - `height`: Viewport height in pixels (number)
+    - `userAgent`: Custom user agent string
+      - Type: string
+    - `userDataDir`: Path to user data directory for persistent browser profile (cache, cookies, login sessions)
+      - Type: string
+      - Note: Allows reusing cached JavaScript bundles, images, CSS, and maintaining login sessions
+    - `channel`: Browser channel to use system-installed browsers (e.g., "chrome", "msedge")
+      - Type: string
+      - Note: Use with system browsers to access their existing profiles and cache
 
 **Examples:**
 
@@ -160,7 +169,7 @@ Simple usage without options:
 {
   "tool": "start_browser",
   "parameters": {
-    "browser": "chrome"
+    "browser": "chromium"
   }
 }
 ```
@@ -171,10 +180,14 @@ With options:
 {
   "tool": "start_browser",
   "parameters": {
-    "browser": "chrome",
+    "browser": "chromium",
     "options": {
       "headless": true,
-      "arguments": ["--no-sandbox"]
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "userAgent": "Mozilla/5.0 Custom Agent"
     }
   }
 }
@@ -186,11 +199,51 @@ With null options (also valid):
 {
   "tool": "start_browser",
   "parameters": {
-    "browser": "chrome",
+    "browser": "firefox",
     "options": null
   }
 }
 ```
+
+**Using cached browser profile (reuse JavaScript bundles, cookies, login sessions):**
+
+```json
+{
+  "tool": "start_browser",
+  "parameters": {
+    "browser": "chromium",
+    "options": {
+      "userDataDir": "C:\\Users\\YourName\\AppData\\Local\\Google\\Chrome\\User Data",
+      "headless": false
+    }
+  }
+}
+```
+
+**Using system-installed Chrome with its profile:**
+
+```json
+{
+  "tool": "start_browser",
+  "parameters": {
+    "browser": "chromium",
+    "options": {
+      "channel": "chrome",
+      "headless": false
+    }
+  }
+}
+```
+
+**Common user data directory paths:**
+
+- **Chrome (Windows):** `C:\Users\<Username>\AppData\Local\Google\Chrome\User Data`
+- **Chrome (macOS):** `~/Library/Application Support/Google/Chrome`
+- **Chrome (Linux):** `~/.config/google-chrome`
+- **Edge (Windows):** `C:\Users\<Username>\AppData\Local\Microsoft\Edge\User Data`
+- **Firefox (Windows):** `C:\Users\<Username>\AppData\Roaming\Mozilla\Firefox\Profiles\<profile-id>`
+- **Firefox (macOS):** `~/Library/Application Support/Firefox/Profiles/<profile-id>`
+- **Firefox (Linux):** `~/.mozilla/firefox/<profile-id>`
 
 ### navigate
 
@@ -200,6 +253,10 @@ Navigates to a URL.
 
 - `url` (required): URL to navigate to
   - Type: string
+- `waitUntil` (optional): When to consider navigation successful
+  - Type: string
+  - Enum: ["load", "domcontentloaded", "networkidle"]
+  - Default: "load"
 
 **Example:**
 
@@ -207,7 +264,8 @@ Navigates to a URL.
 {
   "tool": "navigate",
   "parameters": {
-    "url": "https://www.example.com"
+    "url": "https://www.example.com",
+    "waitUntil": "networkidle"
   }
 }
 ```
@@ -279,14 +337,11 @@ Pauses execution for a specified amount of time — useful when waiting for back
 
 ### find_element
 
-Finds an element on the page.
+Finds an element on the page using Playwright selectors.
 
 **Parameters:**
 
-- `by` (required): Locator strategy
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the locator strategy
+- `selector` (required): CSS selector, text selector, or other Playwright-compatible selector
   - Type: string
 - `timeout`: Maximum time to wait for element in milliseconds
   - Type: number
@@ -298,8 +353,7 @@ Finds an element on the page.
 {
   "tool": "find_element",
   "parameters": {
-    "by": "id",
-    "value": "search-input",
+    "selector": "#search-input",
     "timeout": 5000
   }
 }
@@ -311,10 +365,7 @@ Clicks an element.
 
 **Parameters:**
 
-- `by` (required): Locator strategy
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the locator strategy
+- `selector` (required): CSS selector or Playwright-compatible selector
   - Type: string
 - `timeout`: Maximum time to wait for element in milliseconds
   - Type: number
@@ -326,8 +377,7 @@ Clicks an element.
 {
   "tool": "click_element",
   "parameters": {
-    "by": "css",
-    "value": ".submit-button"
+    "selector": ".submit-button"
   }
 }
 ```
@@ -338,10 +388,7 @@ Sends keys to an element (typing).
 
 **Parameters:**
 
-- `by` (required): Locator strategy
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the locator strategy
+- `selector` (required): CSS selector or Playwright-compatible selector
   - Type: string
 - `text` (required): Text to enter into the element
   - Type: string
@@ -355,8 +402,7 @@ Sends keys to an element (typing).
 {
   "tool": "send_keys",
   "parameters": {
-    "by": "name",
-    "value": "username",
+    "selector": "input[name='username']",
     "text": "testuser"
   }
 }
@@ -364,14 +410,11 @@ Sends keys to an element (typing).
 
 ### get_element_text
 
-Gets the text() of an element.
+Gets the text content of an element.
 
 **Parameters:**
 
-- `by` (required): Locator strategy
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the locator strategy
+- `selector` (required): CSS selector or Playwright-compatible selector
   - Type: string
 - `timeout`: Maximum time to wait for element in milliseconds
   - Type: number
@@ -383,8 +426,7 @@ Gets the text() of an element.
 {
   "tool": "get_element_text",
   "parameters": {
-    "by": "css",
-    "value": ".message"
+    "selector": ".message"
   }
 }
 ```
@@ -395,10 +437,7 @@ Moves the mouse to hover over an element.
 
 **Parameters:**
 
-- `by` (required): Locator strategy
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the locator strategy
+- `selector` (required): CSS selector or Playwright-compatible selector
   - Type: string
 - `timeout`: Maximum time to wait for element in milliseconds
   - Type: number
@@ -410,8 +449,7 @@ Moves the mouse to hover over an element.
 {
   "tool": "hover",
   "parameters": {
-    "by": "css",
-    "value": ".dropdown-menu"
+    "selector": ".dropdown-menu"
   }
 }
 ```
@@ -422,15 +460,9 @@ Drags an element and drops it onto another element.
 
 **Parameters:**
 
-- `by` (required): Locator strategy for source element
+- `selector` (required): CSS selector for source element
   - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the source locator strategy
-  - Type: string
-- `targetBy` (required): Locator strategy for target element
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `targetValue` (required): Value for the target locator strategy
+- `targetSelector` (required): CSS selector for target element
   - Type: string
 - `timeout`: Maximum time to wait for elements in milliseconds
   - Type: number
@@ -442,10 +474,8 @@ Drags an element and drops it onto another element.
 {
   "tool": "drag_and_drop",
   "parameters": {
-    "by": "id",
-    "value": "draggable",
-    "targetBy": "id",
-    "targetValue": "droppable"
+    "selector": "#draggable",
+    "targetSelector": "#droppable"
   }
 }
 ```
@@ -456,10 +486,7 @@ Performs a double click on an element.
 
 **Parameters:**
 
-- `by` (required): Locator strategy
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the locator strategy
+- `selector` (required): CSS selector or Playwright-compatible selector
   - Type: string
 - `timeout`: Maximum time to wait for element in milliseconds
   - Type: number
@@ -471,8 +498,7 @@ Performs a double click on an element.
 {
   "tool": "double_click",
   "parameters": {
-    "by": "css",
-    "value": ".editable-text"
+    "selector": ".editable-text"
   }
 }
 ```
@@ -483,10 +509,7 @@ Performs a right click (context click) on an element.
 
 **Parameters:**
 
-- `by` (required): Locator strategy
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the locator strategy
+- `selector` (required): CSS selector or Playwright-compatible selector
   - Type: string
 - `timeout`: Maximum time to wait for element in milliseconds
   - Type: number
@@ -498,8 +521,7 @@ Performs a right click (context click) on an element.
 {
   "tool": "right_click",
   "parameters": {
-    "by": "css",
-    "value": ".context-menu-trigger"
+    "selector": ".context-menu-trigger"
   }
 }
 ```
@@ -530,10 +552,7 @@ Uploads a file using a file input element.
 
 **Parameters:**
 
-- `by` (required): Locator strategy
-  - Type: string
-  - Enum: ["id", "css", "xpath", "name", "tag", "class"]
-- `value` (required): Value for the locator strategy
+- `selector` (required): CSS selector or Playwright-compatible selector
   - Type: string
 - `filePath` (required): Absolute path to the file to upload
   - Type: string
@@ -547,8 +566,7 @@ Uploads a file using a file input element.
 {
   "tool": "upload_file",
   "parameters": {
-    "by": "id",
-    "value": "file-input",
+    "selector": "#file-input",
     "filePath": "/path/to/file.pdf"
   }
 }
@@ -562,6 +580,9 @@ Captures a screenshot of the current page.
 
 - `outputPath` (optional): Path where to save the screenshot. If not provided, returns base64 data.
   - Type: string
+- `fullPage` (optional): Capture full scrollable page
+  - Type: boolean
+  - Default: false
 
 **Example:**
 
@@ -569,7 +590,8 @@ Captures a screenshot of the current page.
 {
   "tool": "take_screenshot",
   "parameters": {
-    "outputPath": "/path/to/screenshot.png"
+    "outputPath": "/path/to/screenshot.png",
+    "fullPage": true
   }
 }
 ```

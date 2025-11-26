@@ -1,11 +1,11 @@
 {
-  "name": "@mrgolfprat/mcp-selenium",
-  "version": "0.1.23",
-  "description": "Selenium WebDriver MCP Server Custom",
+  "name": "@mrgolfprat/mcp-playwright",
+  "version": "0.1.0",
+  "description": "Playwright MCP Server Custom",
   "type": "module",
   "main": "src/lib/server.js",
   "bin": {
-    "mcp-selenium": "./src/lib/server.js"
+    "mcp-playwright": "./bin/mcp-playwright.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,6 +15,6 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "selenium-webdriver": "^4.18.1"
+    "playwright": "^1.57.0"
   }
 }
